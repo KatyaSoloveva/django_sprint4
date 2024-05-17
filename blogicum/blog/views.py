@@ -162,9 +162,6 @@ class CategoryListView(ListView):
 
 
 class CommentCreateView(CommentMixin, LoginRequiredMixin, CreateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
