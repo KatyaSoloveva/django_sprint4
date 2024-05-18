@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
+from django.utils.safestring import mark_safe
 
-from .models import Category, Location, Post, User
+from .models import Category, Comment, Location, Post, User
 
 
 admin.site.unregister(Group)
@@ -33,7 +34,8 @@ class PostAdmin(admin.ModelAdmin):
         'pub_date',
         'author',
         'location',
-        'category'
+        'category',
+        'show_image',
     )
     list_editable = (
         'is_published',
@@ -44,6 +46,12 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ('title',)
     list_filter = ('category', 'location', 'is_published')
     list_display_links = ('title', 'author', )
+
+    def show_image(self, obj):
+        if obj.image:
+            return mark_safe(f'<img src={obj.image.url}'
+                             'width="80" height="60">')
+        return 'Нет изображения'
 
 
 @admin.register(Category)
@@ -69,6 +77,19 @@ class LocationAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_filter = ('is_published',)
     list_display_links = ('name',)
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = (
+        'text',
+        'post',
+        'author',
+    )
+
+    search_fields = ('text',)
+    list_filter = ('post',)
+    list_display_links = ('text', 'post')
 
 
 admin.site.empty_value_display = 'Не задано'

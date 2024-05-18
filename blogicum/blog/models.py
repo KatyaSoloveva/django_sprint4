@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 from .constants import MAX_LENGTH, LENGTH_LIMIT
-from core.models import IsPublishedCreatedAtModel as PCModel
+from core.models import (CreatedAtModel,
+                         IsPublishedCreatedAtModel as PCModel)
 
 User = get_user_model()
 
@@ -17,7 +18,7 @@ class Category(PCModel):
         'символы латиницы, цифры, дефис и подчёркивание.'
     )
 
-    class Meta:
+    class Meta():
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
 
@@ -28,7 +29,7 @@ class Category(PCModel):
 class Location(PCModel):
     name = models.CharField('Название места', max_length=MAX_LENGTH)
 
-    class Meta:
+    class Meta():
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
 
@@ -49,7 +50,6 @@ class Post(PCModel):
         User,
         on_delete=models.CASCADE,
         null=True,
-        related_name='posts',
         verbose_name='Автор публикации'
     )
     location = models.ForeignKey(
@@ -57,44 +57,42 @@ class Post(PCModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='posts',
         verbose_name='Местоположение'
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='posts',
         verbose_name='Категория'
     )
 
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
+        default_related_name = 'posts'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.title[:LENGTH_LIMIT]
 
 
-class Comment(PCModel):
+class Comment(CreatedAtModel):
     text = models.TextField('Комментария')
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Пост',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Автор'
     )
 
-    class Meta:
+    class Meta(CreatedAtModel.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ('created_at',)
+        default_related_name = 'comments'
 
     def __str__(self):
         return self.text[:LENGTH_LIMIT]
