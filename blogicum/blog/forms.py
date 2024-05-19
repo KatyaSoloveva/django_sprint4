@@ -6,6 +6,10 @@ from .models import Post, Comment
 
 class PostForm(forms.ModelForm):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['pub_date'].initial = now()
+
     class Meta:
         model = Post
         exclude = ('author',)
@@ -15,10 +19,6 @@ class PostForm(forms.ModelForm):
             'pub_date': forms.DateTimeInput(attrs={'type': 'datetime-local'},
                                             format='%Y-%m-%dT%H:%M')
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['pub_date'].initial = now()
 
 
 class CommentForm(forms.ModelForm):

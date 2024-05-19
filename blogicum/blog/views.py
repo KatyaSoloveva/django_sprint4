@@ -4,20 +4,23 @@ from django.views.generic import (
     CreateView, DeleteView, UpdateView, ListView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404
+from django.db.models import Count
 
 from .forms import CommentForm, PostForm
 from .models import Category, Post, User
 from .constants import PAGINATE_BY
-from core.utils import get_optimized_posts, get_optimized_published_posts
 from core.mixins import CommentMixin, OnlyAuthorMixin, PostMixin
+from core.services import (get_optimized_posts,
+                           get_optimized_published_posts)
 
 
 class PostListView(ListView):
     model = Post
     template_name = 'blog/index.html'
     paginate_by = PAGINATE_BY
-    queryset = get_optimized_published_posts(Post.objects)
+    queryset = get_optimized_published_posts(Post.objects).annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -35,7 +38,6 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
 
 class PostUpdateView(PostMixin, UpdateView):
-    form_class = PostForm
 
     def get_success_url(self):
         return reverse('blog:post_detail',
@@ -54,9 +56,10 @@ class PostDetailView(ListView):
 
     def get_post(self):
         post = get_object_or_404(Post, pk=self.kwargs['post_id'])
-        if post.author != self.request.user and not post.is_published:
-            raise Http404
-        return post
+        if post.author == self.request.user:
+            return post
+        return get_object_or_404(get_optimized_published_posts(Post.objects),
+                                 pk=self.kwargs['post_id'])
 
     def get_queryset(self):
         return self.get_post().comments.select_related('author')
@@ -80,7 +83,7 @@ class ProfileListView(ListView):
         author = self.get_author()
         posts = get_optimized_posts(author.posts)
         if self.request.user != author:
-            return get_optimized_published_posts(author.posts)
+            posts = get_optimized_published_posts(posts)
         return posts
 
     def get_context_data(self, **kwargs):
